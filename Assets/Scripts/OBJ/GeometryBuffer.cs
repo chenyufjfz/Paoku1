@@ -1174,9 +1174,9 @@ public class GeometryBuffer {
                 m.boneWeights = weights;
                 GenerateBone.compute_normal(vtopo.joint_pos, out normal_pos, out normal_rot);
 #if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
-                bone_hip = GenerateBone.generate_bone(normal_pos, 10, out bones, true);
+                bone_hip = GenerateBone.generate_bone(normal_pos, 1, out bones, true);
 #else
-                bone_hip = GenerateBone.generate_bone(normal_pos, 10, out bones, false);
+                bone_hip = GenerateBone.generate_bone(normal_pos, 1, out bones, false);
 #endif
                 GenerateBone.apply_posture(normal_rot, bones);
                 bones[GenerateBone.HIP].parent.parent = gs[i].transform;                
@@ -1189,7 +1189,8 @@ public class GeometryBuffer {
                 if (high>0)
                     bones[GenerateBone.HIP].parent.localScale = new Vector3(high / vtopo.total_high, high / vtopo.total_high, high / vtopo.total_high);
                 bones[GenerateBone.HIP].parent.localPosition = new Vector3(0, 0, 0);
-                bones[GenerateBone.HIP].parent.eulerAngles = new Vector3(0, 270, 0);
+                bones[GenerateBone.HIP].parent.eulerAngles = new Vector3(0, 270, 0);                
+                bones[GenerateBone.HIP].localPosition = new Vector3(0, 0, 0);
 #if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
                 System.IO.StreamWriter sw = new System.IO.StreamWriter("Normal.txt");
                 for (int j = 0; j < GenerateBone.TOTAL_PART; j++)

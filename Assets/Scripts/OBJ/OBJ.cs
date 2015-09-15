@@ -79,14 +79,14 @@ public class OBJ : MonoBehaviour {
         show_body = true;
 
         gameObject.AddComponent<Animation>();
-        animation.AddClip(move_para.create_running(), "Idle_1");
-        animation.AddClip(move_para.create_running(), "Idle_2");
-        animation.AddClip(move_para.create_running(), "run");
-        animation.AddClip(move_para.create_running(), "jump");
-        animation.AddClip(move_para.create_running(), "right");
-        animation.AddClip(move_para.create_running(), "left");
-        animation.AddClip(move_para.create_running(), "death");
-        animation.AddClip(move_para.create_running(), "slide");
+        animation.AddClip(move_para.create_move(Movement.RUN), "Idle_1");
+        animation.AddClip(move_para.create_move(Movement.RUN), "Idle_2");
+        animation.AddClip(move_para.create_move(Movement.RUN), "run");
+        animation.AddClip(move_para.create_move(Movement.JUMP), "jump");
+        animation.AddClip(move_para.create_move(Movement.RUN), "right");
+        animation.AddClip(move_para.create_move(Movement.RUN), "left");
+        animation.AddClip(move_para.create_move(Movement.RUN), "death");
+        animation.AddClip(move_para.create_move(Movement.SLIDE), "slide");
 #if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
         LoadObj("file://" + Application.streamingAssetsPath + "/model2.obj\n");
 #else
@@ -163,18 +163,7 @@ public class OBJ : MonoBehaviour {
         if (load_state == LoadState.LOADOBJ || renderer.bones == null || renderer.bones.Length==0)
             return;
         
-        if (load_state == LoadState.RUNNING)
-        {  
-#if false
-            Transform[] bones = renderer.bones;
-            Quaternion[] rot;
-            move_para.get_next_movement(out rot);
-            GenerateBone.apply_posture(rot, bones);
-
-            renderer.bones = bones;
-#endif
-        }
-        else
+        if (load_state == LoadState.IDLE)
         {
             Transform[] bones = renderer.bones;
             Quaternion[] rot;
@@ -183,8 +172,7 @@ public class OBJ : MonoBehaviour {
             GenerateBone.apply_posture(rot, bones);
 
             renderer.bones = bones;
-        }
-            
+        }          
         
         
     }
@@ -207,8 +195,11 @@ public class OBJ : MonoBehaviour {
             return;
         }
 
-        if (load_state == LoadState.RUNNING)
-            start_stop_run();
+        if (load_state != LoadState.IDLE)
+        {
+            load_state = LoadState.IDLE;
+            animation.Stop();            
+        }            
         load_state = LoadState.LOADOBJ;
         StartCoroutine(Load(path));        
     }
@@ -477,11 +468,7 @@ public class OBJ : MonoBehaviour {
 		}
 
         Debug.Log(DateTime.Now.Second + "." + DateTime.Now.Millisecond + "populate mesh start");
-#if STANDALONE_DEBUG
-        buffer.PopulateMeshes(ms, materials);
-#else
-		buffer.PopulateMeshes(ms, materials, 18f);
-#endif
+        buffer.PopulateMeshes(ms, materials, MovePara.normalHeight);
         Debug.Log(DateTime.Now.Second + "." + DateTime.Now.Millisecond + "populate mesh end");
 	}
     
