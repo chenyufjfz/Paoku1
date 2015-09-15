@@ -18,7 +18,6 @@ enum StrafeDirection {left = 0, right = 1}
 private var tPlayer : Transform;	//the main character transform
 private var tPlayerRotation : Transform;	//Player child transform to rotate it in game
 private var aPlayer : Animation;				//character animation
-
 private var tPlayerSidesCollider : Transform;	//sides collider transform (detects stumble)
 private var tFrontCollider : Transform;			//front collider transfrom (detects collisions)
 private var v3BNCDefaultScale : Vector3;
@@ -206,7 +205,7 @@ public function launchGame()
 {
 	StopCoroutine("playIdleAnimations");//stop idle animations
 	hEnemyController.launchEnemy();
-		
+
 	aPlayer["run"].speed = Mathf.Clamp( (fCurrentWalkSpeed/fStartingWalkSpeed)/1.1, 0.8, 1.2 );
 	aPlayer.Play("run");
 

@@ -1,4 +1,5 @@
 #pragma strict
+import System.Reflection; 
 /*
 *	FUNCTION:
 *	- This script handles the menu instantiation, destruction and button event handling.
@@ -53,6 +54,7 @@ public enum GameOverMenuEvents
 private var tMenuGroup : Transform;//get the menu group parent
 private var CurrentMenu:int = -1;	//current menu index
 private var iTapState:int = 0;//state of tap on screen
+private var obj :Component;
 
 private var aspectRatio : float = 0.0;
 private var fResolutionFactor : float;	//displacement of menu elements based on device aspect ratio
@@ -102,7 +104,8 @@ function Start ()
 	hControllerScript = GameObject.Find("Player").GetComponent(ControllerScript) as ControllerScript;
 	hSoundManagerScript = GameObject.Find("SoundManager").GetComponent(SoundManager) as SoundManager;
 	hInGameScript = GameObject.Find("Player").GetComponent(InGameScript) as InGameScript;
-		
+	obj = GameObject.Find("model").GetComponent("OBJ");	
+
 	//the fResolutionFactor can be used to adjust components according to screen size
 	aspectRatio = ( (Screen.height * 1.0)/(Screen.width * 1.0) - 1.77);	
 	fResolutionFactor = (43.0 * (aspectRatio));
@@ -257,6 +260,9 @@ private function handlerMainMenu(buttonTransform : Transform)
 {		
 	if (tMainMenuButtons[0] == buttonTransform)//Tap to Play button
 	{
+	    var load_state: FieldInfo=obj.GetType().GetField("load_state");
+	    if (load_state.GetValue(obj)==0)
+	        return;
 		CloseMenu(MenuIDs.MainMenu);
 		
 		hInGameScript.launchGame();	//start the gameplay
