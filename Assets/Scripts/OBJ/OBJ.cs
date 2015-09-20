@@ -11,6 +11,9 @@ using System.Net;
 public class OBJ : MonoBehaviour {
 	
     public Text text = null;
+    public string obj_path;
+    protected string mtl_path = "model.mtl";
+    protected string img_path = "model.png";
 #if STANDALONE_DEBUG
     public int myPort = 3850;
     protected Socket serverSocket;
@@ -18,9 +21,9 @@ public class OBJ : MonoBehaviour {
     protected byte[] request = new byte[2048];
     /*socket command*/
     protected const string LOAD = "Load";
+    protected const string LOADLOCAL = "LoadLocal";
 #endif
     protected bool show_envelop, show_joint, show_body;
-    
 
 	/* OBJ file tags */
 	private const string O 	= "o";
@@ -69,6 +72,13 @@ public class OBJ : MonoBehaviour {
 #endif
 #endif
          */
+#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
+        obj_path = "f:/chenyu/Unity/paoku/model.obj";
+#else
+#if UNITY_ANDROID
+        obj_path = Application.persistentDataPath +"/model.obj";
+#endif
+#endif
 #if STANDALONE_DEBUG
         IPAddress ip = IPAddress.Parse("127.0.0.1");
         serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
@@ -151,6 +161,10 @@ public class OBJ : MonoBehaviour {
                     case LOAD:
                         LoadObj(cmd_arg[1]);
                         break;
+
+                    case LOADLOCAL:
+                        LoadObj(cmd_arg[1], true);
+                        break;
                 }
             }
         }
@@ -192,7 +206,7 @@ public class OBJ : MonoBehaviour {
 #endif
     }
 
-    public void LoadObj(string path)
+    public void LoadObj(string path, bool load_local=false)
     {
         if (load_state == LoadState.LOADOBJ)
         {
@@ -206,7 +220,7 @@ public class OBJ : MonoBehaviour {
             animation.Stop();            
         }            
         load_state = LoadState.LOADOBJ;
-        StartCoroutine(Load(path));        
+        StartCoroutine(Load(path, load_local));        
     }
 	
     public void show_hide_envelop()
@@ -236,19 +250,29 @@ public class OBJ : MonoBehaviour {
         }
     }
 
-	public IEnumerator Load(string path) {
+	public IEnumerator Load(string path, bool load_local) {
+        bool update_local = !load_local;
+        if (load_local)
+        {
+            if (!obj_path.StartsWith("file:"))
+                path = "file://" + obj_path;
+        }     
+            
+        
+        mtllib = null;
+            
         renderer.enabled = false;
         if (buffer != null)
             buffer.Release();
         buffer = new GeometryBuffer();
-        mtllib = null;
+        
 		string basepath = (path.IndexOf("/") == -1) ? "" : path.Substring(0, path.LastIndexOf("/") + 1);
         if (text != null)
         {
             text.enabled = true;
             text.text = "loading " + path;
         }        
-        Debug.Log(DateTime.Now.Second + "." + DateTime.Now.Millisecond + "paoku load " + path);
+        Debug.Log(DateTime.Now.Second + "." + DateTime.Now.Millisecond + "paoku load obj:" + path);
         WWW loader = new WWW(path);        
         yield return loader;
 
@@ -262,13 +286,22 @@ public class OBJ : MonoBehaviour {
             
         Debug.Log(DateTime.Now.Second + "." + DateTime.Now.Millisecond + "paoku is decoding obj file");
         SetGeometryData(loader.text);                 
+        if (update_local)
+        {
+            Debug.Log("update local obj:" + obj_path);
+            FileStream fileStream = new FileStream(obj_path, FileMode.Create);
+            fileStream.Write(loader.bytes, 0, loader.bytes.Length);
+            fileStream.Close();
+        } 
 
 		if(hasMaterials) {
+            if (load_local)
+                mtllib = mtl_path;
             if (mtllib.StartsWith("./"))
                 mtllib = mtllib.Substring(2);
             if (text != null)
                 text.text = "loading " + basepath + mtllib;
-            Debug.Log("paoku load " + basepath + mtllib);
+            Debug.Log("paoku load material:" + basepath + mtllib);
             loader = new WWW(basepath + mtllib);
             yield return loader;
             if (loader.text == null)
@@ -278,12 +311,22 @@ public class OBJ : MonoBehaviour {
             }
 
             SetMaterialData(loader.text);
+            if (update_local)
+            {
+                string bpath = (obj_path.IndexOf("/") == -1) ? "" : obj_path.Substring(0, obj_path.LastIndexOf("/") + 1);
+                Debug.Log("update local material:" + bpath + mtl_path);
+                FileStream fileStream = new FileStream(bpath+mtl_path, FileMode.Create);
+                fileStream.Write(loader.bytes, 0, loader.bytes.Length);
+                fileStream.Close();
+            } 
 			
 			foreach(MaterialData m in materialData) {
+                if (load_local)
+                    m.diffuseTexPath = img_path;
 				if(m.diffuseTexPath != null) {
                     if (text!=null)
                         text.text = "loading " + basepath + m.diffuseTexPath;
-                    Debug.Log("paoku load " + basepath + m.diffuseTexPath);
+                    Debug.Log("paoku load texture:" + basepath + m.diffuseTexPath);
 					WWW texloader = new WWW(basepath + m.diffuseTexPath);
 					yield return texloader;
                     if (texloader.texture == null)
@@ -292,6 +335,14 @@ public class OBJ : MonoBehaviour {
                         yield break;
                     }                        
 					m.diffuseTex = texloader.texture;
+                    if (update_local)
+                    {
+                        string bpath = (obj_path.IndexOf("/") == -1) ? "" : obj_path.Substring(0, obj_path.LastIndexOf("/") + 1);
+                        Debug.Log("update local texture:" + bpath + img_path);
+                        FileStream fileStream = new FileStream(bpath+img_path, FileMode.Create);
+                        fileStream.Write(texloader.bytes, 0, texloader.bytes.Length);
+                        fileStream.Close();
+                    }                    
 				}
 			}
 		}

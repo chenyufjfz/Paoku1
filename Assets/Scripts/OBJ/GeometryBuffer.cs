@@ -1191,6 +1191,18 @@ public class GeometryBuffer {
                 bones[GenerateBone.HIP].parent.localPosition = new Vector3(0, 0, 0);
                 bones[GenerateBone.HIP].parent.eulerAngles = new Vector3(0, 270, 0);                
                 bones[GenerateBone.HIP].localPosition = new Vector3(0, 0, 0);
+                Vector3 leg_scale = bones[GenerateBone.LEFTUP_LEG].localScale;
+                leg_scale.y = leg_scale.y * 1.13f;
+                bones[GenerateBone.LEFTUP_LEG].localScale = leg_scale;
+                leg_scale = bones[GenerateBone.RIGHTUP_LEG].localScale;
+                leg_scale.y = leg_scale.y * 1.13f;
+                bones[GenerateBone.RIGHTUP_LEG].localScale = leg_scale;
+                leg_scale = bones[GenerateBone.LEFT_LEG].localScale;
+                leg_scale.y = leg_scale.y * 1.1f;
+                bones[GenerateBone.LEFT_LEG].localScale = leg_scale;
+                leg_scale = bones[GenerateBone.RIGHT_LEG].localScale;
+                leg_scale.y = leg_scale.y * 1.1f;
+                bones[GenerateBone.RIGHT_LEG].localScale = leg_scale;
 #if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
                 System.IO.StreamWriter sw = new System.IO.StreamWriter("Normal.txt");
                 for (int j = 0; j < GenerateBone.TOTAL_PART; j++)
