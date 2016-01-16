@@ -50,7 +50,7 @@ public enum GameOverMenuEvents
 	Back = 0,
 	Play = 1
 }
-
+public var ModelPrefab : Transform;
 private var tMenuGroup : Transform;//get the menu group parent
 private var CurrentMenu:int = -1;	//current menu index
 private var iTapState:int = 0;//state of tap on screen
@@ -70,7 +70,7 @@ private var hInGameScript : InGameScript;
 private var tMenuTransforms : Transform[];	//menu prefabs
 //Main Menu
 private var tMainMenuButtons:Transform[];	//main menu buttons' transform
-private var iMainMenuButtonsCount:int = 3;	//total number of buttons on main menu
+private var iMainMenuButtonsCount:int = 5;	//total number of buttons on main menu
 //Pause Menu
 private var tPauseButtons:Transform[];	//pause menu buttons transforms
 private var iPauseButtonsCount:int = 2;	//total number of buttons on pause menu
@@ -97,15 +97,22 @@ private var iResumeGameState : int = 0;
 private var iResumeGameStartTime: int = 0;
 private var tmPauseCountdown : TextMesh;	//count down numbers after resume
 
+function Awake()
+{
+    var model_object : GameObject;
+    model_object = GameObject.Find("model(Clone)");    
+    if (model_object==null) 
+        Instantiate(ModelPrefab, Vector3(0, 0, 0), Quaternion.identity);
+}
 
 function Start ()
 {
 	HUDCamera = GameObject.Find("HUDMainGroup/HUDCamera").GetComponent(Camera) as Camera;
 	hControllerScript = GameObject.Find("Player").GetComponent(ControllerScript) as ControllerScript;
 	hSoundManagerScript = GameObject.Find("SoundManager").GetComponent(SoundManager) as SoundManager;
-	hInGameScript = GameObject.Find("Player").GetComponent(InGameScript) as InGameScript;
-	obj = GameObject.Find("model").GetComponent("OBJ");	
-
+	hInGameScript = GameObject.Find("Player").GetComponent(InGameScript) as InGameScript;	
+	obj = GameObject.Find("model(Clone)").GetComponent("OBJ");	
+	DontDestroyOnLoad(GameObject.Find("model(Clone)"));
 	//the fResolutionFactor can be used to adjust components according to screen size
 	aspectRatio = ( (Screen.height * 1.0)/(Screen.width * 1.0) - 1.77);	
 	fResolutionFactor = (43.0 * (aspectRatio));
@@ -116,10 +123,15 @@ function Start ()
 	//main menu initialization
 	tMenuTransforms[MenuIDs.MainMenu] = tMenuGroup.Find("MainMenu").GetComponent(Transform) as Transform;
 	tMainMenuButtons = new Transform[iMainMenuButtonsCount];
-	tMainMenuButtons[0] = tMenuTransforms[MenuIDs.MainMenu].Find("Buttons/Button_TapToPlay");
+	tMainMenuButtons[0] = tMenuTransforms[MenuIDs.MainMenu].Find("Buttons/Button_Cartoon");
 	tMainMenuButtons[1] = tMenuTransforms[MenuIDs.MainMenu].Find("Buttons/Button_Instructions");
 	tMainMenuButtons[2] = tMenuTransforms[MenuIDs.MainMenu].Find("Buttons/Button_Settings");
+	tMainMenuButtons[3] = tMenuTransforms[MenuIDs.MainMenu].Find("Buttons/Button_Real");
+	tMainMenuButtons[4] = tMenuTransforms[MenuIDs.MainMenu].Find("Buttons/Button_Download");
 	
+	var local_exist: FieldInfo=obj.GetType().GetField("local_exist");
+	if (local_exist.GetValue(obj)==0)
+	    tMainMenuButtons[3].gameObject.SetActive(false);
 	//pause menu initialization
 	tMenuTransforms[MenuIDs.PauseMenu] = tMenuGroup.Find("PauseMenu").GetComponent(Transform) as Transform;
 	tPauseButtons = new Transform[iPauseButtonsCount];
@@ -253,16 +265,22 @@ private function listenerClicks()
 	}
 }//end of listner function
 
+private function deferStartGame()
+{
+    var load_state: FieldInfo=obj.GetType().GetField("load_state");
+    while(load_state.GetValue(obj)==0)
+        yield WaitForFixedUpdate();
+    
+    hControllerScript.chooseReal(true);
+    hInGameScript.launchGame();	//start the gameplay        
+}
 /*
 *	FUNCTION: Handle clicks on Main Menu
 */
 private function handlerMainMenu(buttonTransform : Transform)
-{		
-	if (tMainMenuButtons[0] == buttonTransform)//Tap to Play button
-	{
-	    var load_state: FieldInfo=obj.GetType().GetField("load_state");
-	    if (load_state.GetValue(obj)==0)
-	        return;
+{		    
+    if (tMainMenuButtons[0] == buttonTransform)//cartoon
+	{	    
 		CloseMenu(MenuIDs.MainMenu);
 		
 		hInGameScript.launchGame();	//start the gameplay
@@ -279,6 +297,19 @@ private function handlerMainMenu(buttonTransform : Transform)
 		CloseMenu(MenuIDs.MainMenu);
 		ShowMenu(MenuIDs.SettingsMenu);		
 	}
+    else if (tMainMenuButtons[3]==buttonTransform) //Real man
+    { 
+        CloseMenu(MenuIDs.MainMenu);
+        setMenuScriptStatus(false);
+        (obj as OBJ).attach_local(); 
+        StartCoroutine("deferStartGame");
+    } else if (tMainMenuButtons[4]==buttonTransform)
+    {
+        CloseMenu(MenuIDs.MainMenu);
+        setMenuScriptStatus(false);
+        (obj as OBJ).attach_remote();        
+        StartCoroutine("deferStartGame");
+    }
 }//end of handler main menu function
 
 /*
@@ -288,6 +319,7 @@ private function handlerPauseMenu(buttonTransform : Transform)
 {
 	if (tPauseButtons[0] == buttonTransform)//back button handler
 	{
+	    (obj as OBJ).deattach();
 		hInGameScript.processClicksPauseMenu(PauseMenuEvents.MainMenu);
 		
 		CloseMenu(MenuIDs.PauseMenu);		
@@ -307,6 +339,7 @@ private function handlerGameOverMenu(buttonTransform : Transform)
 {
 	if (tGameOverButtons[0] == buttonTransform)//main menu button
 	{
+	    (obj as OBJ).deattach();
 		hInGameScript.procesClicksDeathMenu(GameOverMenuEvents.Back);
 		CloseMenu(MenuIDs.GameOverMenu);
 		ShowMenu(MenuIDs.MainMenu);		

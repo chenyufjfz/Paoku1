@@ -135,7 +135,7 @@ function Start()
 	tPlayerRotation = transform.Find("PlayerRotation");
 	
 	//get the animation component of the player character
-	aPlayer = this.transform.Find("PlayerRotation/PlayerMesh/model").GetComponent(Animation) as Animation;
+	aPlayer = this.transform.Find("PlayerRotation/PlayerMesh/Prisoner").GetComponent(Animation) as Animation;
 	tBlobShadowPlane = transform.Find("BlobShadowPlane");
 	
 	tPlayerSidesCollider = GameObject.Find("PlayerSidesCollider").transform;	
@@ -178,6 +178,16 @@ function Start()
 	StartCoroutine("playIdleAnimations");//start playing idle animations
 }//end of Start()
 
+public function chooseReal(real : boolean)
+{
+    if (real) {
+        aPlayer = this.transform.Find("PlayerRotation/PlayerMesh/model(Clone)").GetComponent(Animation) as Animation;
+        GameObject.Find("Prisoner").SetActive(false);
+    }        
+    else
+        aPlayer = this.transform.Find("PlayerRotation/PlayerMesh/Prisoner").GetComponent(Animation) as Animation;
+
+}
 /*
  * FUNCTION:	Play and alternate between the two idle animations
  * 				when the game is launched/ restarted.
